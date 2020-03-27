@@ -45,7 +45,7 @@ coef _ =  [ -6.186929
 type alias Config = { trialTimeOffset : Int }
 
 
-initConfig = { trialTimeOffset = 2 }
+initConfig = { trialTimeOffset = 0 }
 
 
 type Factor = Pressure | Time | Vibration
