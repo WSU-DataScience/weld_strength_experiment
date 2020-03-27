@@ -12,9 +12,11 @@ import Html.Events exposing (onClick)
 import Bootstrap.CDN as CDN
 import Bootstrap.Dropdown as Dropdown
 import Bootstrap.Table as Table
+import Bootstrap.Progress as Progress
 import Bootstrap.Button as Button
 import Bootstrap.Grid as Grid
 import Bootstrap.Spinner as Spinner
+import Bootstrap.Utilities.Spacing as Spacing
 import Bootstrap.Grid.Col as Col
 
 
@@ -371,12 +373,19 @@ update msg model =
                 , Cmd.none
                 )
 
-startTicks model =
+
+totalTicks model =
     let
         values = model |> getTrialFactors
         t = values.time
         offset = initConfig.trialTimeOffset  
-        ticks = offset + t |> (*) 60 |> round
+    in
+        offset + t |> (*) 60 |> round
+
+
+startTicks model =
+    let
+        ticks = totalTicks model
     in
         { model | ticks = Just ticks }
     
@@ -523,9 +532,13 @@ mainGrid tableView trialsView debugView getResultButton resultView =
                 , Grid.row []
                     [ Grid.col  [ Col.md8] 
                                 []
-                    , Grid.col [ Col.md2] 
+                    , Grid.col [ Col.md4] 
                                 [ getResultButton]
-                    , Grid.col [ Col.md2] 
+                    ]
+                , Grid.row []
+                    [ Grid.col  [ Col.md8] 
+                                []
+                    , Grid.col [ Col.md4] 
                                 [ resultView ]
                     ]
                 ]
@@ -590,13 +603,18 @@ result model =
                     y 
                     |> roundFloat 4 
                     |> String.fromFloat 
-                    |> (++) "y = " 
+                    |> \s -> "y = " ++ s ++ " N/mm\u{00B2}" 
     in
         case model.ticks of
             Nothing ->
                 out |> text
-            Just _ ->
-                Spinner.spinner [] []
+            Just t ->
+                let
+                    tot = model |> totalTicks |> toFloat
+                    num = t |> toFloat
+                    percent = 100 * num / tot 
+                in
+                    Progress.progress [ Progress.success, Progress.value ((5/3)*(100 - percent))]
 
 
 
@@ -610,13 +628,25 @@ toggleButton factor model =
         [ b [] [model |> trialLevelView factor |> text ]]
     
 
+resultsButtonText model =
+    case model.ticks of
+        Nothing ->
+            [b [] [ text "Run Trial"]] 
+
+        Just _ ->
+            [ Spinner.spinner
+                [ Spinner.small, Spinner.attrs [ Spacing.mr1 ] ] []
+            , text "Welding"
+            ]
+
+
 getResults model =
         Button.button
                 [ Button.small
                 , Button.primary
                 , Button.onClick RunTrial
                 ]
-                [ b [] [ text "Run Trial"]] 
+                (resultsButtonText model)
 
 
 trialTable : Model -> Html Msg
